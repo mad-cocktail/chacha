@@ -1,0 +1,7 @@
+{application, chacha,
+ [
+  {description, ""},
+  {vsn, git},
+  {registered, []},
+  {env, []}
+ ]}.
