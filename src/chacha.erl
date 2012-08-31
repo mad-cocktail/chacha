@@ -10,8 +10,8 @@ parse_transform(Forms, _Options) ->
     F = fun visitor/2,
     X = [element(1, preorder(F, initial_state(Tree), Tree)) || Tree <- Forms],
     [io:format(user, "~p~n", [tree_to_string(Tree)]) || Tree <- Forms],
-    io:format(user, "Before:\t~p\n\nAfter:\t~p\n", [Forms, X]),
-    X.
+%   io:format(user, "Before:\t~p\n\nAfter:\t~p\n", [Forms, X]),
+    Forms.
 
 initial_state(FormTree) ->
     #state{variables = erl_syntax_lib:variables(FormTree)}.
