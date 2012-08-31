@@ -1,32 +1,54 @@
 -module(chacha_tests).
 
--compile({parse_transform, perry}).
+-compile({parse_transform, chacha}).
 -compile(export_all).
 
+x1() -> a+(b:c:_).
+x2() -> a+((b+c)+d).
 
-id(X) -> X.
 
-do_nothing(Xs) ->
-    chain + lists:map(id) ++ Xs.
+%id(X) -> X.
+%pair(X, Y) -> {X, Y}.
+%
+%do_nothing(Xs) ->
+%    chain + lists:map(id) ++ Xs.
 
-do_nothing2(Xs) ->
-    F = chain * 1 + lists:map(id),
-    F(Xs).
+%do_nothing_alt(Xs) ->
+%    chain + (lists:map + id) ++ Xs.
+
+%check_arity() ->
+%    chain/2 + lists:reverse/2.
+%
+%simple_foldl_before() ->
+%    fun(Acc, Xs) ->
+%        lists:foldl(fun pair/2, Acc, Xs)
+%        end.
+%
+%simple_foldl() ->
+%    chain/2 + lists:foldl(pair/2, _Acc).
+%
+%simple_foldl_alt() ->
+%    chain/2 + lists:foldl(pair/2, _Acc) ++ _Acc + _Xs.
+%
+%
+%do_nothing2(Xs) ->
+%    F = chain/1 + lists:map(id),
+%    F(Xs).
 
 st() -> tt(_).
-
+%
 %case3() ->
 %    chain + io:write(_) ++ user + mess.
-
+%
 %case3_alt1() ->
-%    F = chain*2 + io:write(_),
+%    F = chain/2 + io:write(_),
 %    F(user, mess).
 %
 %case3_alt2() ->
-%    chain + 1 * io:write ++ user + mess.
+%    chain + io:write/2 ++ user + mess.
 %
 %case3_alt3() ->
-%    chain - (io:write ++ user + mess).
+%    chain - (io:write/2 ++ user + mess).
 %
 %
 %head([H|_]) -> H.
@@ -46,13 +68,13 @@ st() -> tt(_).
 %    fun(X) -> is_upper(head(X)) end.
 %
 %case6() ->
-%    chain*1 + is_upper + head.
+%    chain/1 + is_upper + head.
 %
 %case6_alt() ->
-%    chain*1 - is_upper(_) - head(_).
+%    chain/1 - is_upper(_) - head(_).
 %
 %case6_alt3() ->
-%    chain*1 - is_upper(head ++ _).
+%    chain/1 - is_upper(head ++ _).
 %
 %is_space(X) -> X =:= $ .
 %
@@ -85,11 +107,11 @@ st() -> tt(_).
 %beetween_trans(AppNode) ->
 %    Pos = erl_syntax:get_pos(AppNode),
 %    %% Call it fore all new nodes.
-%    New = chain*1 + erl_syntax:set_pos(_Node) ++ _Node + Pos,
+%    New = chain/1 + erl_syntax:set_pos(_Node) ++ _Node + Pos,
 %    [SubjectForm, FromForm, ToForm] =
 %        erl_syntax:application_arguments(AppNode),
 %    Op = chain*1 + New + erl_syntax:operator,
-%    WithSubject = chain*2 %% Operator, Node
+%    WithSubject = chain/2 %% Operator, Node
 %                  + New + erl_syntax:infix_expr(_SubjectForm, Op + _)
 %                  ++ SubjectForm,
 %    chain
@@ -105,9 +127,9 @@ st() -> tt(_).
 %%               + (WithSubject ++ '=<') ++ ToForm.
 %
 %%         + New + erl_syntax:infix_expr
-%%               (2 * WithSubject,
-%%                1 * Op,
-%%                2 * WithSubject). ++ '>=' + FromForm + 'andalso' + '=<' + ToForm
+%%               (WithSubject/2,
+%%                Op/1,
+%%                WithSubject/2). ++ '>=' + FromForm + 'andalso' + '=<' + ToForm
 %
 %append_value_rec_before(Action, SlotId, Value, Ignore, S2T, Bin1) ->
 %    Bin2 = append_type(action_type(Action), Bin1),
@@ -151,13 +173,11 @@ st() -> tt(_).
 %%%        minus means to skip the last argument.
 %
 %
-%%% N = 1, 3, 1 is not arity, but a count of skipped elements.
-%%% For example, Fun = append_slot/2, N = 1, the second argument is Bin@.
 %append_value_rec_alt(Action, SlotId, Value, Ignore, S2T, Bin) ->
 %    chain
-%    + 1 * append_boolean
-%    + 3 * append_value
-%    + 1 * append_slot
+%    + 2 / append_boolean
+%    + 4 / append_value
+%    + 2 / append_slot
 %    + append_type(action_type ++ Action)
 %    ++ Ignore  + SlotId + Value + S2T +  SlotId + Bin.
 %
