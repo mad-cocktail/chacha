@@ -49,8 +49,8 @@ In Erlang::
 Here::
 
     sum() -> chain(lists:foldl(erlang:'+'/2 ++ 0)).
-    %% run it
-    sum()([1,2,3]).
+    %% Run it
+    (sum())([1,2,3]).
     6
 
 
