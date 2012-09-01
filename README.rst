@@ -8,9 +8,9 @@ The main goal of this parse transform is to make the Erlang syntax more evil.
 **Author**: Uvarov Michael (freeakk@gmail.com)
 
 
-.. image:: https://secure.travis-ci.org/freeakk/chacha.png?branch=master
+.. image:: https://secure.travis-ci.org/mad-cocktail/chacha.png?branch=master
     :alt: Build Status
-    :target: http://travis-ci.org/freeakk/chacha
+    :target: http://travis-ci.org/mad-cocktail/chacha
 
 
 Syntax
