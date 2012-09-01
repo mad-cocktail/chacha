@@ -24,6 +24,8 @@ f(g(x)) is
 - here: chain(f, g -- X).
 
 
+An another case
+
 - in erlang: ``[_, X|_] = Xs.``
 - in erlang (again): ``head(tail(Xs)).``
 - here: ``chain(head, tail -- Xs).``
