@@ -54,7 +54,7 @@ Here:
 
 .. code-block:: erlang
 
-    sum() -> chain(lists:foldl(erlang:'+'/2 ++ 0)).
+    sum() -> chain(lists:foldl(erlang:'+'/2, 0)).
     %% Run it
     (sum())([1,2,3]).
     6

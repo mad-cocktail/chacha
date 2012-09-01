@@ -47,14 +47,6 @@ simple_foldl(X) ->
     chain(lists:foldl(pair/2, X)).
 
 
-case3() ->
-    chain(io:write(user) -- mess).
-
-case3_alt1() ->
-    F = fun(X, Y) -> FF = chain(io:write(X)), FF(Y) end,
-    F(user, mess).
-
-
 head([H|_]) -> H.
 is_upper(X) when X >= $A, X =< $Z -> true.
 
@@ -90,6 +82,18 @@ case2() ->
           -- [" a", "f", "   ee"]).
 
 
+case3() ->
+    chain(io:write(user) -- mess).
+
+case3_alt1() ->
+    F = fun(X, Y) -> FF = chain(io:write(X)), FF(Y) end,
+    F(user, mess).
+
+
+sum(Xs) ->
+    chain(lists:foldl(erlang:'+'/2, 0) -- Xs).
+
+
 -include_lib("eunit/include/eunit.hrl").
 
 -ifdef(TEST).
@@ -106,6 +110,10 @@ case2_test_() ->
 
 last_test_() ->
     [ ?_assertEqual(last("Test"), $t)
+    ].
+
+sum_test_() ->
+    [ ?_assertEqual(sum([1,2,3]), 6)
     ].
 
 do_nothing_test_() ->
