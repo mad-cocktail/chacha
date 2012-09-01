@@ -154,6 +154,7 @@ Using nested calls::
                                                             Bin)))).
 
 Using the chain operator::
+    .. code-block:: erlang
 
     append_value_rec(Action, SlotId, Value, Ignore, S2T, Bin) ->
         chain(
