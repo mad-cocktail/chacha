@@ -75,8 +75,8 @@ Here::
     4
 
 
-Real Word Example 1
--------------------
+Real World Example 1
+--------------------
 
 
 Before::
@@ -124,8 +124,8 @@ After::
                                     , WithSubject('=<', ToForm))).
 
 
-Real Word Example 2
--------------------
+Real World Example 2
+--------------------
 
 Before::
 
