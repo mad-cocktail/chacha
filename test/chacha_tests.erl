@@ -1,7 +1,9 @@
 -module(chacha_tests).
 
+%% Include cut BEFORE
+%-compile({parse_transform, cut}).
+-compile({parse_transform, chicha}).
 -compile({parse_transform, chacha}).
--compile({parse_transform, cut}).
 
 -compile(export_all).
 
@@ -9,18 +11,31 @@
 id(X) -> X.
 pair(X, Y) -> {X, Y}.
 
-%%lsts:map/2.
-%%+id.
-%%hof(Test, _St)
+last(Xs) ->
+    chain(lists:last/1 -- Xs).
 
-chain(VarFun, 
-
-
- do_nothing(Xs) ->
-     chain(lists:map(id/1) -- Xs).
-
-do_nothing_alt(Xs) ->
+do_nothing(Xs) ->
     chain(lists:map(id/1) -- Xs).
+
+do_nothing2(Xs) ->
+    F = chain(lists:map(id/1)),
+    F(Xs).
+
+do_nothing_too(Xs) ->
+    chain(id/1 -- Xs).
+
+do_nothing_too2(Xs) ->
+    chain(id -- Xs).
+
+do_nothing_too3(Xs) ->
+    Id = fun id/1,
+    chain(Id -- Xs).
+
+do_nothing_too4(Xs) ->
+    chain(fun(X) -> X end -- Xs).
+
+do_nothing_too5(Xs) ->
+   chain(fun id/1 -- Xs).
 
 
 simple_foldl_before() ->
@@ -32,12 +47,6 @@ simple_foldl(X) ->
     chain(lists:foldl(pair/2, X)).
 
 
-do_nothing2(Xs) ->
-    F = chain(lists:map(id/1)),
-    F(Xs).
-
-t() -> tt(_).
-
 case3() ->
     chain(io:write(user) -- mess).
 
@@ -48,94 +57,65 @@ case3_alt1() ->
 
 head([H|_]) -> H.
 is_upper(X) when X >= $A, X =< $Z -> true.
+
+%% TODO: This function is too trivial.
 words(S) -> string:tokens(S, " ").
 
 
 case1_before() ->
-    length(filter(fun([H|_]) -> fun is_upper/1 end, words("Hi all."))).
+    fun(Str) ->
+        length(lists:filter(fun([H|_]) -> is_upper(H) end, words(Str)))
+        end.
 
 case1() ->
-    chain(length, filter(chain(is_upper, head)), words -- "Hi all.").
+    chain(length, lists:filter(chain(is_upper, head)), words).
 
 
 
 is_space(X) -> X =:= $ .
+with_first(F, [H|T]) -> [F(H)|T].
+
 
 case2_before() ->
-    lists:map(fun(X) -> lists:dropwhile(fun is_space/1, X) end, [" a", "f", "   e"]).
+    lists:map(fun(X) -> 
+                [H|T] = lists:dropwhile(fun is_space/1, X), 
+                [string:to_upper(H)|T] 
+                end, 
+              [" a", "f", "   ee"]).
+
 
 case2() ->
-    chain(lists:map(chain(lists:dropwhile, is_space)) -- [" a", "f", "   e"]).
+    chain(lists:map(chain(with_first(string:to_upper/1), 
+                          lists:dropwhile(is_space/1))) 
+          -- [" a", "f", "   ee"]).
 
 
-case3_before() ->
-    io:write(user, mess).
+-include_lib("eunit/include/eunit.hrl").
 
-beetween_trans_before(AppNode) ->
-    Pos = erl_syntax:get_pos(AppNode),
-    %% Call it fore all new nodes.
-    New = fun(NewNode) -> erl_syntax:set_pos(NewNode, Pos) end,
-    %% Extract arguments of the `in' function.
-    [SubjectForm, FromForm, ToForm] =
-        erl_syntax:application_arguments(AppNode),
-    GtEqOp = New(erl_syntax:operator('>=')),
-    LoEqOp = New(erl_syntax:operator('=<')),
-    AndOp  = New(erl_syntax:operator('andalso')),
-    Exp1 = New(erl_syntax:infix_expr(SubjectForm, GtEqOp, FromForm)),
-    Exp2 = New(erl_syntax:infix_expr(SubjectForm, LoEqOp, ToForm)),
-    Exp3 = New(erl_syntax:infix_expr(Exp1, AndOp, Exp2)),
-    GuardAST = New(erl_syntax:parentheses(Exp3)),
-    erl_syntax:revert(GuardAST).
+-ifdef(TEST).
 
-beetween_trans(AppNode) ->
-    Pos = erl_syntax:get_pos(AppNode),
-    %% Call it fore all new nodes.
-    %% Use cut from erlando.
- %  New = erl_syntax:set_pos(_, Pos),
-    New = fun(Node) -> erl_syntax:set_pos(Node, Pos) end,
+case1_test_() ->
+    [ ?_assertEqual((case1())("Hello, Mike! Hello, Joe!"), 4)
+    , ?_assertEqual((case1_before())("Hello, Mike! Hello, Joe!"), 4)
+    ].
 
-    [SubjectForm, FromForm, ToForm] =
-        erl_syntax:application_arguments(AppNode),
+case2_test_() ->
+    [ ?_assertEqual(case2(), ["A", "F", "Ee"])
+    , ?_assertEqual(case2_before(), ["A", "F", "Ee"])
+    ].
 
-    Op = chain(New, erl_syntax:operator),
-    WithSubject = fun(LitOp, Form) -> 
-        chain(New, erl_syntax:infix_expr(SubjectForm, Op(LitOp)) -- Form)
-        end,
+last_test_() ->
+    [ ?_assertEqual(last("Test"), $t)
+    ].
 
-    chain(erl_syntax:revert
-        , New, erl_syntax:parentheses
-        , New  
-        %% It is a simple term
-        -- erl_syntax:infix_expr(WithSubject('>=', FromForm)
-                                , Op('andalso')
-                                , WithSubject('=<', ToForm)).
+do_nothing_test_() ->
+    [ ?_assertEqual(do_nothing([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing2([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing_too([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing_too2([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing_too3([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing_too4([1,2,3]), [1,2,3])
+    , ?_assertEqual(do_nothing_too5([1,2,3]), [1,2,3])
+    ].
 
-append_value_rec_before(Action, SlotId, Value, Ignore, S2T, Bin1) ->
-    Bin2 = append_type(action_type(Action), Bin1),
-    Bin3 = append_slot(SlotId, Bin2),
-    Bin4 = append_value(SlotId, Value, S2T, Bin3),
-    append_boolean(Ignore, Bin4).
-
-
-append_value_rec_before_seq(Action, SlotId, Value, Ignore, S2T, Bin@) ->
-    Bin@ = append_type(action_type(Action), Bin@),
-    Bin@ = append_slot(SlotId, Bin@),
-    Bin@ = append_value(SlotId, Value, S2T, Bin@),
-    Bin@ = append_boolean(Ignore, Bin@),
-    Bin@.
-
-append_value_rec_before_nested(Action, SlotId, Value, Ignore, S2T, Bin) ->
-    append_boolean(Ignore, 
-                   append_value(SlotId, Value, S2T, 
-                                append_slot(SlotId, 
-                                            append_type(action_type(Action), 
-                                                        Bin)))).
-
-
-append_value_rec(Action, SlotId, Value, Ignore, S2T, Bin) ->
-    chain(
-     append_boolean(Ignore)
-    ,append_value(SlotId, Value, S2T)
-    ,append_slot(SlotId)
-    ,append_type(action_type(Action))).
-
+-endif.
