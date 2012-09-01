@@ -38,15 +38,21 @@ Creating a higher-order function (HOF).
 Sum example
 -----------
 
-Haskell::
+Haskell:
+
+.. code-block:: erlang
 
     sum = foldr (+) 0
 
-In Erlang::
+In Erlang:
+
+.. code-block:: erlang
 
     sum() -> fun(Xs) -> lists:foldl(fun erlang:'+'/2, 0, Xs) end.
 
-Here::
+Here:
+
+.. code-block:: erlang
 
     sum() -> chain(lists:foldl(erlang:'+'/2 ++ 0)).
     %% Run it
@@ -58,17 +64,23 @@ Here::
 The count of titled words
 -------------------------
 
-Haskell::
+Haskell:
+
+.. code-block:: erlang
     
     length . filter(is_upper . head) . words
 
-Erlang::
+Erlang:
+
+.. code-block:: erlang
 
     -spec words(string()) -> [non_empty_string()].
     ...
     fun(Str) -> length([X || [X|_] <- words(Str), is_upper(X)]).
 
-Here::
+Here:
+
+.. code-block:: erlang
 
     F = chain(length, filter(chain(is_upper, head)), words),
     F("Hello, Mike! Hello, Joe!").
@@ -79,7 +91,9 @@ Real World Example 1
 --------------------
 
 
-Before::
+Before:
+
+.. code-block:: erlang
 
     beetween_trans(AppNode) ->
         Pos = erl_syntax:get_pos(AppNode),
@@ -98,15 +112,14 @@ Before::
         erl_syntax:revert(GuardAST).
 
 
-After::
+After:
+
+.. code-block:: erlang
 
     beetween_trans(AppNode) ->
         Pos = erl_syntax:get_pos(AppNode),
         %% Call it for all new nodes.
-        %% Use cut from erlando.
-     %  New = erl_syntax:set_pos(_, Pos),
         New = fun(Node) -> erl_syntax:set_pos(Node, Pos) end,
-
         [SubjectForm, FromForm, ToForm] =
             erl_syntax:application_arguments(AppNode),
 
@@ -127,7 +140,9 @@ After::
 Real World Example 2
 --------------------
 
-Before::
+Before:
+
+.. code-block:: erlang
 
     append_value_rec_before(Action, SlotId, Value, Ignore, S2T, Bin1) ->
         Bin2 = append_type(action_type(Action), Bin1),
@@ -135,7 +150,9 @@ Before::
         Bin4 = append_value(SlotId, Value, S2T, Bin3),
         append_boolean(Ignore, Bin4).
 
-Using seqbind::
+Using seqbind:
+
+.. code-block:: erlang
 
     append_value_rec_before_seq(Action, SlotId, Value, Ignore, S2T, Bin@) ->
         Bin@ = append_type(action_type(Action), Bin@),
@@ -144,7 +161,9 @@ Using seqbind::
         Bin@ = append_boolean(Ignore, Bin@),
         Bin@.
 
-Using nested calls::
+Using nested calls:
+
+.. code-block:: erlang
 
     append_value_rec_before_nested(Action, SlotId, Value, Ignore, S2T, Bin) ->
         append_boolean(Ignore, 
@@ -153,8 +172,9 @@ Using nested calls::
                                                 append_type(action_type(Action), 
                                                             Bin)))).
 
-Using the chain operator::
-    .. code-block:: erlang
+Using the chain operator:
+
+.. code-block:: erlang
 
     append_value_rec(Action, SlotId, Value, Ignore, S2T, Bin) ->
         chain(
