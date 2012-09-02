@@ -94,6 +94,14 @@ sum(Xs) ->
     chain(lists:foldl(erlang:'+'/2, 0) -- Xs).
 
 
+con(H, T) -> [H|T].
+
+append(List) ->
+    %% It is [1,2,3|List].
+    chain(con(1), con(2), con(3) -- List).
+
+
+
 -include_lib("eunit/include/eunit.hrl").
 
 -ifdef(TEST).
@@ -124,6 +132,12 @@ do_nothing_test_() ->
     , ?_assertEqual(do_nothing_too3([1,2,3]), [1,2,3])
     , ?_assertEqual(do_nothing_too4([1,2,3]), [1,2,3])
     , ?_assertEqual(do_nothing_too5([1,2,3]), [1,2,3])
+    ].
+
+
+append_test_() ->
+    [ ?_assertEqual(append([]), [1,2,3])
+    , ?_assertEqual(append([4,5]), [1,2,3,4,5])
     ].
 
 -endif.

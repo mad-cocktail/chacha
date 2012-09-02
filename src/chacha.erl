@@ -1,17 +1,13 @@
 -module(chacha).
 -export([parse_transform/2]).
 
--record(state, {}).
 
 
 parse_transform(Forms, _Options) ->
-    F = fun visitor/2,
-    X = [element(1, preorder(F, initial_state(Tree), Tree)) || Tree <- Forms],
+    F = fun(X) -> erl_syntax:revert(visitor(X)) end,
+    X = [erl_syntax_lib:map(F, Tree) || Tree <- Forms],
 %   io:format(user, "Before:\t~p\n\nAfter:\t~p\n", [Forms, X]),
     X.
-
-initial_state(_FormTree) ->
-    #state{}.
 
 
 left(X) ->
@@ -51,6 +47,10 @@ handle_element(Tree, Prev) ->
 
 
 %% @doc Add an argument Arg as a last argument of the App.
+-spec push_application_argument(Arg, App) -> App when
+    Arg :: erl_syntax:syntaxTree(),
+    App :: erl_syntax:syntaxTree().
+
 push_application_argument(Arg, App) ->
     Args = erl_syntax:application_arguments(App),
     Op   = erl_syntax:application_operator(App),
@@ -58,6 +58,9 @@ push_application_argument(Arg, App) ->
 
 
 %% @doc Convert something into a function call.
+-spec to_application(Tree) -> Tree when
+    Tree :: erl_syntax:syntaxTree().
+
 to_application(Tree) ->
 %   application
     case node_type(Tree) of
@@ -66,6 +69,10 @@ to_application(Tree) ->
         _           -> erl_syntax:application(Tree, [])
     end.
 
+
+%% @doc Call something.
+-spec infix_expr_to_application(Tree) -> Tree when
+    Tree :: erl_syntax:syntaxTree().
 
 infix_expr_to_application(Tree) ->
     L = left(Tree),
@@ -82,10 +89,17 @@ infix_expr_to_application(Tree) ->
     end.
 
 
+-spec is_chain_with_param(ChainArgs) -> boolean() when
+    ChainArgs :: erl_syntax:syntaxTree().
+
 is_chain_with_param(ChainArgs) ->
     Last = lists:last(ChainArgs),
     node_type(Last) =:= infix_expr andalso op_name(Last) =:= "--".
 
+
+-spec extract_chain_param(ChainArgs) -> {ChainArgs, Param} when
+    ChainArgs :: erl_syntax:syntaxTree(),
+    Param :: erl_syntax:syntaxTree().
 
 extract_chain_param(ChainArgs) ->
     Last = lists:last(ChainArgs),
@@ -93,37 +107,44 @@ extract_chain_param(ChainArgs) ->
     ParamVar = right(Last),
     {replace_last_element(LastFun, ChainArgs), ParamVar}.
 
+
 %% @doc Set `X' as a last element of `Xs'.
+-spec replace_last_element(term(), [term()]) -> [term()].
+
 replace_last_element(X, Xs) ->
     [_Last|XsR] = lists:reverse(Xs),
     lists:reverse(XsR, [X]).
 
 
-visitor(Tree, State) ->
+-spec visitor(Tree) -> Tree when
+    Tree :: erl_syntax:syntaxTree().
+visitor(Tree) ->
     IsChain = is_chain(Tree),
-    Skip = {Tree, State},
     if
     IsChain ->
         ChainArgs = erl_syntax:application_arguments(Tree),
         ParamExists = is_chain_with_param(ChainArgs),
         if ParamExists -> 
             {ChainArgs2, ChainParamVar} = extract_chain_param(ChainArgs),
-            Tree2 = handle_chain(ChainArgs2, ChainParamVar),
-            {Tree2, State};
+            handle_chain(ChainArgs2, ChainParamVar);
         true ->
             %% handle hof chain
             %% Use random, because of the Erlang's warning about shadowing.
             UniqueVarName = list_to_atom("ChainParam" ++
                                          integer_to_list(random:uniform(1000))),
             ChainParamVar = copy_pos(Tree, erl_syntax:variable( UniqueVarName)),
-            Tree2 = hof1(ChainParamVar, handle_chain(ChainArgs, ChainParamVar)),
-            {Tree2, State}
+            hof1(ChainParamVar, handle_chain(ChainArgs, ChainParamVar))
         end;
-    true -> Skip
+    true -> Tree
     end.
 
 
 %% @doc Create `fun(Arg) -> Body end'.
+-spec hof1(Arg, Body) -> Fun when
+    Arg  :: erl_syntax:syntaxTree(),
+    Body :: erl_syntax:syntaxTree(),
+    Fun  :: erl_syntax:syntaxTree().
+
 hof1(Arg, Body) ->
     C1 = erl_syntax:clause([Arg], none, [Body]),
     erl_syntax:fun_expr([C1]).
@@ -158,29 +179,4 @@ is_funtion_call(FunName, Tree) ->
 
 -spec always(term()) -> true.
 always(_) -> true.
-
-
-%% @doc This function is like `lists:foldl/3'.
--spec preorder(F, State, Form) -> {Form, State} when
-    F :: fun((Form, State) -> {Form, State}),
-    State :: term(),
-    Form :: erl_syntax:syntaxTree().
-preorder(F, State, Form) ->
-    Skip = {Form1, State1} = F(Form, State),
-    case erl_syntax:subtrees(Form1) of
-    [] ->
-        Skip;
-    List ->
-        {Groups, State2} = lists:mapfoldl(handle_group(F), State1, List),
-        Tree2 = erl_syntax:update_tree(Form1, Groups),
-        Form2 = erl_syntax:revert(Tree2),
-        {Form2, State2}
-    end.
-
-
-handle_group(F) ->
-    fun(Group, State) -> 
-        FF = fun(Subtree, State2) -> preorder(F, State2, Subtree) end,
-        lists:mapfoldl(FF, State, Group)
-        end.
 
