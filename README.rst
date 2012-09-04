@@ -191,3 +191,12 @@ Using the chain operator:
         ,append_slot(SlotId)
         ,append_type(action_type(Action)) -- Bin).
 
+
+.. code-block:: erlang
+
+    append_value_rec(Action, SlotId, Value, Ignore, S2T, Bin) ->
+        chainl(
+         append_type(action_type(Action)) 
+        ,append_slot(SlotId)
+        ,append_value(SlotId, Value, S2T)
+        ,append_boolean(Ignore) -- Bin).
