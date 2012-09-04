@@ -37,6 +37,12 @@ Creating a higher-order function (HOF).
 - here: ``F = chain(head, tail).``
 
 
+Operator associativity
+======================
+
+``chain`` and ``chainr`` have right associativity, ``chainl`` has left
+associativity.
+
 Sum example
 -----------
 

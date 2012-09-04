@@ -101,6 +101,14 @@ append(List) ->
     chain(con(1), con(2), con(3) -- List).
 
 
+appendr(List) ->
+    %% It is [1,2,3|List].
+    chainr(con(1), con(2), con(3) -- List).
+
+appendl(List) ->
+    %% It is [3,2,1|List].
+    chainl(con(1), con(2), con(3) -- List).
+
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -138,6 +146,18 @@ do_nothing_test_() ->
 append_test_() ->
     [ ?_assertEqual(append([]), [1,2,3])
     , ?_assertEqual(append([4,5]), [1,2,3,4,5])
+    ].
+
+
+appendr_test_() ->
+    [ ?_assertEqual(appendr([]), [1,2,3])
+    , ?_assertEqual(appendr([4,5]), [1,2,3,4,5])
+    ].
+
+
+appendl_test_() ->
+    [ ?_assertEqual(appendl([]), [3,2,1])
+    , ?_assertEqual(appendl([4,5]), [3,2,1,4,5])
     ].
 
 -endif.

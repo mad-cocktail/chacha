@@ -35,12 +35,19 @@ node_type(X) ->
     erl_syntax:type(X).
 
 
-handle_chain(ChainArgs, ChainParamVar) when is_list(ChainArgs) ->
-%   io:format(user,
-%             "ChainArgs: ~p~n ChainParamVar: ~p~n",
-%             [ChainArgs, ChainParamVar]),
-    lists:foldr(fun handle_element/2, ChainParamVar, ChainArgs).
+%% ChainArgs = [g,v], not reversed. use foldr.
+%% g(v(ChainParamVar))
+handle_chain(right, ChainArgs, ChainParamVar) when is_list(ChainArgs) ->
+    %% Right-to-left order, right associativity.
+    lists:foldr(fun handle_element/2, ChainParamVar, ChainArgs);
+handle_chain(left,  ChainArgs, ChainParamVar) when is_list(ChainArgs) ->
+    %% Left-to-right associativity, left associativity.
+    lists:foldl(fun handle_element/2, ChainParamVar, ChainArgs).
 
+
+-spec handle_element(Tree, Prev) -> Tree when
+    Tree :: erl_syntax:syntaxTree(),
+    Prev :: Tree.
 
 handle_element(Tree, Prev) ->
     push_application_argument(Prev, to_application(Tree)).
@@ -118,22 +125,25 @@ replace_last_element(X, Xs) ->
 
 -spec visitor(Tree) -> Tree when
     Tree :: erl_syntax:syntaxTree().
+
 visitor(Tree) ->
-    IsChain = is_chain(Tree),
+    FunName = function_name(Tree),
+    IsChain = is_chain(FunName),
     if
     IsChain ->
         ChainArgs = erl_syntax:application_arguments(Tree),
         ParamExists = is_chain_with_param(ChainArgs),
+        Assoc = chain_associativity(FunName),
         if ParamExists -> 
             {ChainArgs2, ChainParamVar} = extract_chain_param(ChainArgs),
-            handle_chain(ChainArgs2, ChainParamVar);
+            handle_chain(Assoc, ChainArgs2, ChainParamVar);
         true ->
             %% handle hof chain
             %% Use random, because of the Erlang's warning about shadowing.
             UniqueVarName = list_to_atom("ChainParam" ++
                                          integer_to_list(random:uniform(1000))),
             ChainParamVar = copy_pos(Tree, erl_syntax:variable( UniqueVarName)),
-            hof1(ChainParamVar, handle_chain(ChainArgs, ChainParamVar))
+            hof1(ChainParamVar, handle_chain(Assoc, ChainArgs, ChainParamVar))
         end;
     true -> Tree
     end.
@@ -163,20 +173,27 @@ copy_pos(From, To) ->
 -spec is_chain(Tree) -> boolean() when 
     Tree :: erl_syntax:syntaxTree().
 
-is_chain(Tree) ->
-    is_funtion_call(chain, Tree).
+%% chain == chainr
+is_chain(FunName) ->
+    lists:member(FunName, [chain, chainr, chainl]).
 
 
--spec is_funtion_call(FunName, Tree) -> boolean() when 
+chain_associativity(chainl) -> left;
+chain_associativity(_chain) -> right.
+
+
+-spec function_name(Tree) -> FunName when 
     FunName :: atom(),
     Tree :: erl_syntax:syntaxTree().
 
-is_funtion_call(FunName, Tree) ->
-    node_type(Tree) =:= application
-    andalso always(Op = erl_syntax:application_operator(Tree))
-    andalso node_type(Op) =:= atom
-    andalso erl_syntax:atom_value(Op) =:= FunName.
-
--spec always(term()) -> true.
-always(_) -> true.
+function_name(Tree) ->
+    case node_type(Tree) of
+        application ->
+            Op = erl_syntax:application_operator(Tree),
+            case node_type(Op) of
+                atom -> erl_syntax:atom_value(Op);
+                _    -> undefined
+            end;
+        _ -> undefined
+    end.
 
